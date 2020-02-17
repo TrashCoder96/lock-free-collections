@@ -1,5 +1,11 @@
 package main
 
+import (
+	"log"
+	"sync/atomic"
+	"unsafe"
+)
+
 type node struct {
 	Value int
 	Next  *node
@@ -20,18 +26,25 @@ func InitList() *OrderedLinkedList {
 }
 
 func (l *OrderedLinkedList) add(value int) {
-	cursor := l.Head
-	var previousNode *node
-	for cursor != nil && cursor.Value <= value {
-		previousNode = cursor
-		cursor = cursor.Next
-	}
-	newNode := node{
+	newNode := &node{
 		Value: value,
-		Next:  cursor,
 	}
-	if previousNode != nil {
-		previousNode.Next = &newNode
+	for {
+		cursor := l.Head
+		var previousNode *node
+		var oldValue unsafe.Pointer
+		for cursor != nil && cursor.Value < value {
+			previousNode = cursor
+			oldValue = unsafe.Pointer(previousNode.Next)
+			cursor = cursor.Next
+		}
+		newNode.Next = previousNode.Next
+		newValue := unsafe.Pointer(newNode)
+		addr := (*unsafe.Pointer)(unsafe.Pointer(&previousNode.Next))
+		if atomic.CompareAndSwapPointer(addr, oldValue, newValue) {
+			return
+		}
+		log.Println("d")
 	}
 }
 
@@ -46,4 +59,14 @@ func (l *OrderedLinkedList) delete(value int) {
 		panic("Key not found")
 	}
 	previousNode.Next = previousNode.Next.Next
+}
+
+func (l *OrderedLinkedList) count() int {
+	count := 0
+	cursor := l.Head
+	for cursor != nil {
+		cursor = cursor.Next
+		count++
+	}
+	return count - 1
 }

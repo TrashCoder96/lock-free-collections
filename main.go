@@ -1,17 +1,23 @@
 package main
 
-import "math/rand"
+import (
+	"log"
+	"sync"
+)
 
 func main() {
 	list := InitList()
-	arr := make([]int, 1000, 1000)
-	for i := 0; i < 1000; i++ {
-		arr[i] = rand.Intn(10000)
+	var wg sync.WaitGroup
+	wg.Add(50)
+	for i := 0; i < 50; i++ {
+		go func(n int) {
+			for j := n * 1000; j < (n+1)*1000; j++ {
+				list.add(7)
+			}
+			wg.Done()
+		}(i)
 	}
-	for _, i := range arr {
-		list.add(i)
-	}
-	for _, i := range arr {
-		list.delete(i)
-	}
+	wg.Wait()
+	log.Println(list.count())
+	log.Println("")
 }
