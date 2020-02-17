@@ -2,22 +2,22 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"sync"
 )
 
 func main() {
 	list := InitList()
 	var wg sync.WaitGroup
-	wg.Add(50)
-	for i := 0; i < 50; i++ {
+	wg.Add(100)
+	for i := 0; i < 100; i++ {
 		go func(n int) {
 			for j := n * 1000; j < (n+1)*1000; j++ {
-				list.add(7)
+				list.add(rand.Intn(100))
 			}
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
-	log.Println(list.count())
-	log.Println("")
+	log.Printf("Count of items : %d\n", list.count())
 }

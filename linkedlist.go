@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"sync/atomic"
 	"unsafe"
 )
@@ -44,7 +43,6 @@ func (l *OrderedLinkedList) add(value int) {
 		if atomic.CompareAndSwapPointer(addr, oldValue, newValue) {
 			return
 		}
-		log.Println("d")
 	}
 }
 
