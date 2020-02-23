@@ -1,13 +1,12 @@
 package main
 
-import (
-	"sync/atomic"
-	"unsafe"
-)
+import "sync"
 
 type node struct {
-	Value int
-	Next  *node
+	Value   int
+	Next    *node
+	Mutex   sync.Mutex
+	Removed bool
 }
 
 //OrderedLinkedList struct
@@ -31,22 +30,30 @@ func (l *OrderedLinkedList) add(value int) {
 	for {
 		cursor := l.Head
 		var previousNode *node
-		var oldValue unsafe.Pointer
 		for cursor != nil && cursor.Value < value {
 			previousNode = cursor
-			oldValue = unsafe.Pointer(previousNode.Next)
 			cursor = cursor.Next
 		}
-		newNode.Next = previousNode.Next
-		newValue := unsafe.Pointer(newNode)
-		addr := (*unsafe.Pointer)(unsafe.Pointer(&previousNode.Next))
-		if atomic.CompareAndSwapPointer(addr, oldValue, newValue) {
+		previousNode.Mutex.Lock()
+		success := false
+		if previousNode.Next == cursor && !previousNode.Removed {
+			newNode.Next = cursor
+			previousNode.Next = newNode
+			success = true
+		}
+		previousNode.Mutex.Unlock()
+		if success {
 			return
 		}
 	}
 }
 
 func (l *OrderedLinkedList) delete(value int) {
+	for !l.deleteInCycle(value) {
+	}
+}
+
+func (l *OrderedLinkedList) deleteInCycle(value int) bool {
 	cursor := l.Head
 	var previousNode *node
 	for cursor != nil && cursor.Value != value {
@@ -56,7 +63,20 @@ func (l *OrderedLinkedList) delete(value int) {
 	if cursor == nil {
 		panic("Key not found")
 	}
-	previousNode.Next = previousNode.Next.Next
+	previousNode.Mutex.Lock()
+	defer previousNode.Mutex.Unlock()
+	cursor.Mutex.Lock()
+	defer cursor.Mutex.Unlock()
+	condition := previousNode.Next == cursor && !previousNode.Removed && !cursor.Removed
+	if cursor.Next != nil {
+		condition = condition && !cursor.Next.Removed
+	}
+	if condition {
+		cursor.Removed = true
+		previousNode.Next = cursor.Next
+		return true
+	}
+	return false
 }
 
 func (l *OrderedLinkedList) count() int {

@@ -13,7 +13,11 @@ func main() {
 	for i := 0; i < 100; i++ {
 		go func(n int) {
 			for j := n * 1000; j < (n+1)*1000; j++ {
-				list.add(rand.Intn(100))
+				p := rand.Intn(100)
+				list.add(p)
+				if j%2 == 0 {
+					list.delete(p)
+				}
 			}
 			wg.Done()
 		}(i)
