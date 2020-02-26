@@ -3,25 +3,30 @@ package main
 import (
 	"log"
 	"math/rand"
-	"sync"
 )
 
 func main() {
-	list := InitList()
-	var wg sync.WaitGroup
-	wg.Add(100)
-	for i := 0; i < 100; i++ {
-		go func(n int) {
-			for j := n * 1000; j < (n+1)*1000; j++ {
-				p := rand.Intn(100)
-				list.add(p)
-				if j%2 == 0 {
-					list.delete(p)
-				}
-			}
-			wg.Done()
-		}(i)
+	tree := initTree(5)
+	array := make([]int64, 10000, 10000)
+	for i := 0; i < 10000; i++ {
+		array[i] = rand.Int63n(100000)
 	}
-	wg.Wait()
-	log.Printf("Count of items : %d\n", list.count())
+	for _, item := range array {
+		tree.Insert(item, "")
+	}
+	/*for _, item := range array {
+		if item == 46637 {
+			log.Println()
+		}
+		suc := tree.Delete(item)
+		if !suc {
+			log.Println()
+		}
+	}*/
+	pointer := tree.root.internalNodeHead.childNode.internalNodeHead.childNode.internalNodeHead.childNode.internalNodeHead.childNode.leafHead
+	for pointer != nil {
+		pointer = pointer.nextKey
+		log.Println(pointer.value)
+	}
+	log.Println(pointer)
 }

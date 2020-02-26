@@ -27,6 +27,17 @@ type palmTreePointer struct {
 	childNode   *palmNode
 }
 
+func initTree(order int) *PalmTree {
+	tree := PalmTree{
+		order: order,
+		root: &palmNode{
+			isLeaf:      true,
+			countOfKeys: 0,
+		},
+	}
+	return &tree
+}
+
 //Insert function
 func (ptree *PalmTree) Insert(key int64, value string) {
 	if ptree.root.leafHead == nil && ptree.root.internalNodeHead == nil {
@@ -118,26 +129,25 @@ func (pnode *palmNode) insertToLeafNode(key int64, value string) {
 		pnode.leafHead = &newLeaf
 	} else {
 		leafBeforeNewLeaf := pnode.leafHead
-		for leafBeforeNewLeaf.nextKey != nil && leafBeforeNewLeaf.nextKey.value <= key {
+		i := 1
+		for ; i < pnode.countOfKeys && (leafBeforeNewLeaf.nextKey != nil && leafBeforeNewLeaf.nextKey.value < key); i++ {
 			leafBeforeNewLeaf = leafBeforeNewLeaf.nextKey
 		}
-		newLeaf = palmTreeKey{
-			value: key,
-		}
-		if pnode.leafHead.value < key {
-			if leafBeforeNewLeaf.nextKey == nil {
-				leafBeforeNewLeaf.nextKey = &newLeaf
-				newLeaf.previousKey = leafBeforeNewLeaf
-			} else {
-				newLeaf.nextKey = leafBeforeNewLeaf.nextKey
-				newLeaf.previousKey = leafBeforeNewLeaf
-				leafBeforeNewLeaf.nextKey.previousKey = &newLeaf
-				leafBeforeNewLeaf.nextKey = &newLeaf
-			}
-		} else {
+		if i == 1 {
 			newLeaf.nextKey = pnode.leafHead
+			newLeaf.previousKey = pnode.leafHead.previousKey
+			if pnode.leafHead.previousKey != nil {
+				pnode.leafHead.previousKey.nextKey = &newLeaf
+			}
 			pnode.leafHead.previousKey = &newLeaf
 			pnode.leafHead = &newLeaf
+		} else {
+			newLeaf.previousKey = leafBeforeNewLeaf
+			newLeaf.nextKey = leafBeforeNewLeaf.nextKey
+			leafBeforeNewLeaf.nextKey = &newLeaf
+			if leafBeforeNewLeaf.nextKey != nil {
+				leafBeforeNewLeaf.nextKey.previousKey = &newLeaf
+			}
 		}
 	}
 	pnode.countOfKeys = pnode.countOfKeys + 1
@@ -171,8 +181,6 @@ func cutIfPossible(pointer *palmTreePointer) {
 		rightPointer.childNode = &rightNode
 		newKey.value = keyBeforeNextNode.nextKey.value
 		rightNode.leafHead = keyBeforeNextNode.nextKey
-		rightNode.leafHead.previousKey = nil
-		keyBeforeNextNode.nextKey = nil
 	} else {
 		rightNode := palmNode{
 			isLeaf:      false,
@@ -250,17 +258,7 @@ func moveToLeftNode(subtree *palmTreePointer) {
 	rightPointer := middleKey.nextPointer
 	lowLevelIsLeaves := leftPointer.childNode.isLeaf && rightPointer.childNode.isLeaf
 	if lowLevelIsLeaves {
-		movedItem := rightPointer.childNode.leafHead
 		rightPointer.childNode.leafHead = rightPointer.childNode.leafHead.nextKey
-		rightPointer.childNode.leafHead.previousKey = nil
-		movedItem.nextKey = nil
-		tailKey := leftPointer.childNode.leafHead
-		for tailKey.nextKey != nil {
-			tailKey = tailKey.nextKey
-		}
-		tailKey.nextKey = movedItem
-		movedItem.previousKey = tailKey
-		middleKey.value = rightPointer.childNode.leafHead.value
 	} else {
 		tailPointer := leftPointer.childNode.internalNodeHead
 		for tailPointer.nextKey != nil {
@@ -287,16 +285,7 @@ func moveToRightNode(subtree *palmTreePointer) {
 	rightPointer := middleKey.nextPointer
 	lowLevelIsLeaves := leftPointer.childNode.isLeaf && rightPointer.childNode.isLeaf
 	if lowLevelIsLeaves {
-		tailKey := leftPointer.childNode.leafHead
-		for tailKey.nextKey != nil {
-			tailKey = tailKey.nextKey
-		}
-		tailKey.previousKey.nextKey = nil
-		tailKey.previousKey = nil
-		tailKey.nextKey = rightPointer.childNode.leafHead
-		rightPointer.childNode.leafHead.previousKey = tailKey
-		rightPointer.childNode.leafHead = tailKey
-		middleKey.value = rightPointer.childNode.leafHead.value
+		rightPointer.childNode.leafHead = rightPointer.childNode.leafHead.previousKey
 	} else {
 		tailPointer := leftPointer.childNode.internalNodeHead
 		for tailPointer.nextKey != nil {
@@ -325,12 +314,6 @@ func merge(subtree *palmTreePointer) {
 	lowLevelIsLeaves := leftPointer.childNode.isLeaf && rightPointer.childNode.isLeaf
 	leftPointer.childNode.countOfKeys += rightPointer.childNode.countOfKeys
 	if lowLevelIsLeaves {
-		tailLeaf := leftPointer.childNode.leafHead
-		for tailLeaf.nextKey != nil {
-			tailLeaf = tailLeaf.nextKey
-		}
-		tailLeaf.nextKey = rightPointer.childNode.leafHead
-		rightPointer.childNode.leafHead.previousKey = tailLeaf
 		leftPointer.nextKey = rightPointer.nextKey
 		if rightPointer.nextKey != nil {
 			rightPointer.nextKey.previousPointer = leftPointer
@@ -352,14 +335,17 @@ func merge(subtree *palmTreePointer) {
 	}
 }
 
+//readme fix!!!
 func (pnode *palmNode) deleteFromLeafNode(key int64) bool {
 	currentLeaf := pnode.leafHead
+	index := 0
 	for currentLeaf != nil {
 		if currentLeaf.value == key {
-			if currentLeaf.previousKey == nil {
+			if currentLeaf.previousKey == nil || index == 0 {
 				pnode.leafHead = currentLeaf.nextKey
-				if currentLeaf.nextKey != nil {
-					currentLeaf.nextKey.previousKey = nil
+				pnode.leafHead.previousKey = pnode.leafHead.previousKey.previousKey
+				if pnode.leafHead.previousKey != nil {
+					pnode.leafHead.previousKey.nextKey = pnode.leafHead
 				}
 			} else if currentLeaf.nextKey == nil {
 				currentLeaf.previousKey.nextKey = nil
@@ -371,6 +357,7 @@ func (pnode *palmNode) deleteFromLeafNode(key int64) bool {
 			return true
 		}
 		currentLeaf = currentLeaf.nextKey
+		index++
 	}
 	return false
 }
