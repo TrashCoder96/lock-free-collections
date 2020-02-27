@@ -1,5 +1,7 @@
 package main
 
+import "errors"
+
 //PalmTree type
 type PalmTree struct {
 	order int
@@ -39,7 +41,7 @@ func initTree(order int) *PalmTree {
 }
 
 //Insert function
-func (ptree *PalmTree) Insert(key int64, value string) {
+func (ptree *PalmTree) Insert(key int64, value string) error {
 	if ptree.root.leafHead == nil && ptree.root.internalNodeHead == nil {
 		ptree.root.leafHead = &palmTreeKey{
 			value: key,
@@ -47,7 +49,9 @@ func (ptree *PalmTree) Insert(key int64, value string) {
 		ptree.root.countOfKeys = 1
 	} else {
 		rootPointer := palmTreePointer{childNode: ptree.root}
-		ptree.insert(key, value, &rootPointer)
+		if _, err := ptree.insert(key, value, &rootPointer); err != nil {
+			return err
+		}
 		if rootPointer.nextKey != nil {
 			newNode := palmNode{
 				internalNodeHead: &rootPointer,
@@ -56,6 +60,7 @@ func (ptree *PalmTree) Insert(key int64, value string) {
 			ptree.root = &newNode
 		}
 	}
+	return nil
 }
 
 //Delete function
@@ -75,24 +80,30 @@ func (ptree *PalmTree) Find(key int64) bool {
 }
 
 //function returns true, if cutting has occured
-func (ptree *PalmTree) insert(key int64, value string, pointerToNode *palmTreePointer) bool {
+func (ptree *PalmTree) insert(key int64, value string, pointerToNode *palmTreePointer) (bool, error) {
 	if pointerToNode.childNode.isLeaf {
-		pointerToNode.childNode.insertToLeafNode(key, value)
+		if err := pointerToNode.childNode.insertToLeafNode(key, value); err != nil {
+			return false, err
+		}
 		if pointerToNode.childNode.countOfKeys > 2*ptree.order-1 {
 			cutIfPossible(pointerToNode)
-			return true
+			return true, nil
 		}
 	} else {
 		suitablePointer := pointerToNode.childNode.getPointer(key)
-		if ptree.insert(key, value, suitablePointer) {
+		success, err := ptree.insert(key, value, suitablePointer)
+		if err != nil {
+			return false, err
+		}
+		if success {
 			pointerToNode.childNode.countOfKeys = pointerToNode.childNode.countOfKeys + 1
 		}
 		if pointerToNode.childNode.countOfKeys > 2*ptree.order-1 {
 			cutIfPossible(pointerToNode)
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (pnode *palmNode) getPointer(key int64) *palmTreePointer {
@@ -123,7 +134,7 @@ func (pnode *palmNode) getPointer(key int64) *palmTreePointer {
 	}
 }
 
-func (pnode *palmNode) insertToLeafNode(key int64, value string) {
+func (pnode *palmNode) insertToLeafNode(key int64, value string) error {
 	newLeaf := palmTreeKey{value: key}
 	if pnode.leafHead == nil {
 		pnode.leafHead = &newLeaf
@@ -139,6 +150,9 @@ func (pnode *palmNode) insertToLeafNode(key int64, value string) {
 		} else {
 			leafBeforeNewLeaf := pnode.leafHead
 			for i := 0; i < pnode.countOfKeys; i++ {
+				if leafBeforeNewLeaf.value == key {
+					return errors.New("Item already exists")
+				}
 				if leafBeforeNewLeaf.nextKey == nil || leafBeforeNewLeaf.nextKey.value > key {
 					break
 				}
@@ -153,6 +167,7 @@ func (pnode *palmNode) insertToLeafNode(key int64, value string) {
 		}
 	}
 	pnode.countOfKeys = pnode.countOfKeys + 1
+	return nil
 }
 
 func cutIfPossible(pointer *palmTreePointer) {

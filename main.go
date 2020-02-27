@@ -7,17 +7,27 @@ import (
 
 func main() {
 	tree := initTree(3)
-	array := make([]int64, 2500, 2500)
-	for i := 0; i < 2500; i++ {
-		array[i] = rand.Int63n(100000)
+	hmap := make(map[int64]bool)
+	for i := 0; i < 55000; i++ {
+		hmap[rand.Int63n(10000000)] = true
 	}
-	for _, item := range array {
-		tree.Insert(item, "")
+	log.Println(len(hmap))
+	for key, value := range hmap {
+		if value {
+			if err := tree.Insert(key, ""); err != nil {
+				log.Println(err)
+			}
+			if err := tree.Insert(key, ""); err != nil {
+				log.Println(err)
+			}
+		}
 	}
-	for _, item := range array {
-		s := tree.Delete(item)
-		if !s {
-			log.Println()
+	for key, value := range hmap {
+		if value {
+			suc := tree.Delete(key)
+			if !suc {
+				log.Println("delete error")
+			}
 		}
 	}
 	log.Println()
