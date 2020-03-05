@@ -15,6 +15,7 @@ type redBlackNode struct {
 	colour    int
 	leftNode  *redBlackNode
 	rightNode *redBlackNode
+	parent    *redBlackNode
 }
 
 //Add func
@@ -78,4 +79,30 @@ func (rbnode *redBlackNode) find(value int) bool {
 	} else {
 		return false
 	}
+}
+
+func (rbnode *redBlackNode) getGrandparent() *redBlackNode {
+	if rbnode.parent != nil && rbnode.parent.parent != nil {
+		return rbnode.parent.parent
+	}
+	return nil
+}
+
+func (rbnode *redBlackNode) getUncle() *redBlackNode {
+	grandparent := rbnode.getGrandparent()
+	if grandparent != nil {
+		if rbnode.parent == grandparent.rightNode {
+			return grandparent.leftNode
+		}
+		return grandparent.rightNode
+	}
+	return nil
+}
+
+func rotateLeft(rbnode *redBlackNode) {
+
+}
+
+func rotateRight(rbnode *redBlackNode) {
+
 }
