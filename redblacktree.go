@@ -41,7 +41,9 @@ func (rbnode *redBlackNode) addToSubtree(value int) {
 			rbnode.rightNode = &redBlackNode{
 				value:  value,
 				colour: red,
+				parent: rbnode,
 			}
+			rebalance(rbnode.rightNode)
 		}
 	} else {
 		if rbnode.leftNode != nil {
@@ -50,8 +52,85 @@ func (rbnode *redBlackNode) addToSubtree(value int) {
 			rbnode.leftNode = &redBlackNode{
 				value:  value,
 				colour: red,
+				parent: rbnode,
 			}
+			rebalance(rbnode.leftNode)
 		}
+	}
+}
+
+func rebalance(node *redBlackNode) {
+	uncle := node.getUncle()
+	if uncle != nil {
+		grandparent := node.getGrandparent()
+		if uncle.colour == red {
+			node.parent.colour = black
+			uncle.colour = black
+			grandparent.colour = red
+			rebalance(grandparent)
+		} else if uncle.colour == black {
+
+		} else {
+			panic("Impossible situation")
+		}
+	}
+}
+
+func (rbtree *RedBlackTree) leftLeftCase(grandparent *redBlackNode) {
+	parent := grandparent.leftNode
+	rotateRight(grandparent)
+	//swap colours of parent and grandparent
+	parent.colour = black
+	grandparent.colour = red
+}
+
+func (rbtree *RedBlackTree) leftRightCase(grandparent *redBlackNode) {
+
+}
+
+func (rbtree *RedBlackTree) rightRightCase(grandparent *redBlackNode) {
+
+}
+
+func (rbtree *RedBlackTree) rightLeftCase(grandparent *redBlackNode) {
+
+}
+
+func rotateLeft(grandparent *redBlackNode) {
+	//change structure of nodes
+	parent := grandparent.rightNode
+	changeStructureOfNodes(grandparent)
+	grandparent.rightNode = parent.leftNode
+	if parent.leftNode != nil {
+		parent.leftNode.parent = grandparent
+	}
+	parent.leftNode = grandparent
+	grandparent.parent = parent
+}
+
+func rotateRight(grandparent *redBlackNode) {
+	//change structure of nodes
+	parent := grandparent.leftNode
+	changeStructureOfNodes(grandparent)
+	grandparent.leftNode = parent.rightNode
+	if parent.rightNode != nil {
+		parent.rightNode.parent = grandparent
+	}
+	parent.rightNode = grandparent
+	grandparent.parent = parent
+}
+
+func changeStructureOfNodes(grandparent *redBlackNode) {
+	grandgrandparent := grandparent.parent
+	parent := grandparent.leftNode
+	if grandgrandparent.leftNode == grandparent {
+		grandgrandparent.leftNode = parent
+		parent.parent = grandgrandparent
+	} else if grandgrandparent.rightNode == grandparent {
+		grandgrandparent.rightNode = parent
+		parent.parent = grandgrandparent
+	} else {
+		panic("Impossible situation")
 	}
 }
 
@@ -97,12 +176,4 @@ func (rbnode *redBlackNode) getUncle() *redBlackNode {
 		return grandparent.rightNode
 	}
 	return nil
-}
-
-func rotateLeft(rbnode *redBlackNode) {
-
-}
-
-func rotateRight(rbnode *redBlackNode) {
-
 }
