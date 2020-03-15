@@ -17,9 +17,6 @@ func main() {
 			if err := tree.Insert(key, ""); err != nil {
 				log.Println(err)
 			}
-			if err := tree.Insert(key, ""); err != nil {
-				log.Println(err)
-			}
 		}
 	}
 	for key, value := range hmap {

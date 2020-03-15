@@ -69,14 +69,22 @@ func rebalance(node *redBlackNode) {
 			grandparent.colour = red
 			rebalance(grandparent)
 		} else if uncle.colour == black {
-
+			if grandparent.leftNode.colour == red && grandparent.leftNode.leftNode.colour == red {
+				leftLeftCase(grandparent)
+			} else if grandparent.leftNode.colour == red && grandparent.leftNode.rightNode.colour == red {
+				leftRightCase(grandparent)
+			} else if grandparent.rightNode.colour == red && grandparent.rightNode.rightNode.colour == red {
+				rightRightCase(grandparent)
+			} else if grandparent.rightNode.colour == red && grandparent.rightNode.leftNode.colour == red {
+				rightLeftCase(grandparent)
+			}
 		} else {
 			panic("Impossible situation")
 		}
 	}
 }
 
-func (rbtree *RedBlackTree) leftLeftCase(grandparent *redBlackNode) {
+func leftLeftCase(grandparent *redBlackNode) {
 	parent := grandparent.leftNode
 	rotateRight(grandparent)
 	//swap colours of parent and grandparent
@@ -84,16 +92,30 @@ func (rbtree *RedBlackTree) leftLeftCase(grandparent *redBlackNode) {
 	grandparent.colour = red
 }
 
-func (rbtree *RedBlackTree) leftRightCase(grandparent *redBlackNode) {
-
+func leftRightCase(grandparent *redBlackNode) {
+	parent := grandparent.leftNode
+	rotateLeft(parent)
+	rotateRight(grandparent)
+	//swap colours of parent and grandparent
+	parent.colour = black
+	grandparent.colour = red
 }
 
-func (rbtree *RedBlackTree) rightRightCase(grandparent *redBlackNode) {
-
+func rightRightCase(grandparent *redBlackNode) {
+	parent := grandparent.leftNode
+	rotateLeft(grandparent)
+	//swap colours of parent and grandparent
+	parent.colour = black
+	grandparent.colour = red
 }
 
-func (rbtree *RedBlackTree) rightLeftCase(grandparent *redBlackNode) {
-
+func rightLeftCase(grandparent *redBlackNode) {
+	parent := grandparent.rightNode
+	rotateRight(parent)
+	rotateLeft(grandparent)
+	//swap colours of parent and grandparent
+	parent.colour = black
+	grandparent.colour = red
 }
 
 func rotateLeft(grandparent *redBlackNode) {
