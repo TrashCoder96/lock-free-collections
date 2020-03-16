@@ -11,117 +11,145 @@ type RedBlackTree struct {
 }
 
 type redBlackNode struct {
-	value     int
+	value     int64
 	colour    int
 	leftNode  *redBlackNode
 	rightNode *redBlackNode
 	parent    *redBlackNode
 }
 
+func initRedBlackTree() *RedBlackTree {
+	return &RedBlackTree{}
+}
+
 //Add func
-func (rbtree *RedBlackTree) Add(value int) {
+func (rbtree *RedBlackTree) Add(value int64) {
 	if rbtree.head == nil {
 		rbtree.head = &redBlackNode{
 			colour: black,
 			value:  value,
 		}
 	} else {
-		rbtree.head.addToSubtree(value)
+		rbtree.addToSubtree(rbtree.head, value)
+		rbtree.head.colour = black
 	}
 }
 
-func (rbnode *redBlackNode) addToSubtree(value int) {
+func (rbtree *RedBlackTree) addToSubtree(rbnode *redBlackNode, value int64) {
 	if rbnode.value == value {
 		panic("Key already exists in red-black tree")
 	}
 	if value > rbnode.value {
 		if rbnode.rightNode != nil {
-			rbnode.rightNode.addToSubtree(value)
+			rbtree.addToSubtree(rbnode.rightNode, value)
 		} else {
 			rbnode.rightNode = &redBlackNode{
 				value:  value,
 				colour: red,
 				parent: rbnode,
 			}
-			rebalance(rbnode.rightNode)
+			rbtree.rebalance(rbnode.rightNode)
 		}
 	} else {
 		if rbnode.leftNode != nil {
-			rbnode.leftNode.addToSubtree(value)
+			rbtree.addToSubtree(rbnode.leftNode, value)
 		} else {
 			rbnode.leftNode = &redBlackNode{
 				value:  value,
 				colour: red,
 				parent: rbnode,
 			}
-			rebalance(rbnode.leftNode)
+			rbtree.rebalance(rbnode.leftNode)
 		}
 	}
 }
 
-func rebalance(node *redBlackNode) {
+func (rbtree *RedBlackTree) rebalance(node *redBlackNode) {
+	if node.parent == nil {
+		return
+	}
+	grandparent := node.getGrandparent()
+	if grandparent == nil {
+		return
+	}
 	uncle := node.getUncle()
-	if uncle != nil {
-		grandparent := node.getGrandparent()
-		if uncle.colour == red {
-			node.parent.colour = black
-			uncle.colour = black
-			grandparent.colour = red
-			rebalance(grandparent)
-		} else if uncle.colour == black {
-			if grandparent.leftNode.colour == red && grandparent.leftNode.leftNode.colour == red {
-				leftLeftCase(grandparent)
-			} else if grandparent.leftNode.colour == red && grandparent.leftNode.rightNode.colour == red {
-				leftRightCase(grandparent)
-			} else if grandparent.rightNode.colour == red && grandparent.rightNode.rightNode.colour == red {
-				rightRightCase(grandparent)
-			} else if grandparent.rightNode.colour == red && grandparent.rightNode.leftNode.colour == red {
-				rightLeftCase(grandparent)
-			}
+	uncleIsRed := uncle != nil && uncle.colour == red
+	uncleIsBlack := uncle == nil || uncle.colour == black
+	if uncleIsRed {
+		node.parent.colour = black
+		uncle.colour = black
+		grandparent.colour = red
+		rbtree.rebalance(grandparent)
+	} else if uncleIsBlack {
+		if grandparent.leftNode != nil && grandparent.leftNode.colour == red &&
+			grandparent.leftNode.leftNode != nil && grandparent.leftNode.leftNode.colour == red {
+			rbtree.leftLeftCase(grandparent)
+		} else if grandparent.leftNode != nil && grandparent.leftNode.colour == red &&
+			grandparent.leftNode.rightNode != nil && grandparent.leftNode.rightNode.colour == red {
+			rbtree.leftRightCase(grandparent)
+		} else if grandparent.rightNode != nil && grandparent.rightNode.colour == red &&
+			grandparent.rightNode.rightNode != nil && grandparent.rightNode.rightNode.colour == red {
+			rbtree.rightRightCase(grandparent)
+		} else if grandparent.rightNode != nil && grandparent.rightNode.colour == red &&
+			grandparent.rightNode.leftNode != nil && grandparent.rightNode.leftNode.colour == red {
+			rbtree.rightLeftCase(grandparent)
+		}
+	} else {
+		panic("Impossible situation")
+	}
+}
+
+func (rbtree *RedBlackTree) leftLeftCase(grandparent *redBlackNode) {
+	parent := grandparent.leftNode
+	rbtree.rotateRight(grandparent)
+	//swap colours of parent and grandparent
+	parent.colour = black
+	grandparent.colour = red
+}
+
+func (rbtree *RedBlackTree) leftRightCase(grandparent *redBlackNode) {
+	parent := grandparent.leftNode
+	rbtree.rotateLeft(parent)
+	rbtree.rotateRight(grandparent)
+	//swap colours of parent and grandparent
+	parent.colour = black
+	grandparent.colour = red
+}
+
+func (rbtree *RedBlackTree) rightRightCase(grandparent *redBlackNode) {
+	parent := grandparent.rightNode
+	rbtree.rotateLeft(grandparent)
+	//swap colours of parent and grandparent
+	parent.colour = black
+	grandparent.colour = red
+}
+
+func (rbtree *RedBlackTree) rightLeftCase(grandparent *redBlackNode) {
+	parent := grandparent.rightNode
+	rbtree.rotateRight(parent)
+	rbtree.rotateLeft(grandparent)
+	//swap colours of parent and grandparent
+	parent.colour = black
+	grandparent.colour = red
+}
+
+func (rbtree *RedBlackTree) rotateLeft(grandparent *redBlackNode) {
+	parent := grandparent.rightNode
+	grandgrandparent := grandparent.parent
+	if grandgrandparent == nil {
+		rbtree.head = parent
+		rbtree.head.parent = nil
+	} else {
+		if grandgrandparent.leftNode == grandparent {
+			grandgrandparent.leftNode = parent
+			parent.parent = grandgrandparent
+		} else if grandgrandparent.rightNode == grandparent {
+			grandgrandparent.rightNode = parent
+			parent.parent = grandgrandparent
 		} else {
 			panic("Impossible situation")
 		}
 	}
-}
-
-func leftLeftCase(grandparent *redBlackNode) {
-	parent := grandparent.leftNode
-	rotateRight(grandparent)
-	//swap colours of parent and grandparent
-	parent.colour = black
-	grandparent.colour = red
-}
-
-func leftRightCase(grandparent *redBlackNode) {
-	parent := grandparent.leftNode
-	rotateLeft(parent)
-	rotateRight(grandparent)
-	//swap colours of parent and grandparent
-	parent.colour = black
-	grandparent.colour = red
-}
-
-func rightRightCase(grandparent *redBlackNode) {
-	parent := grandparent.leftNode
-	rotateLeft(grandparent)
-	//swap colours of parent and grandparent
-	parent.colour = black
-	grandparent.colour = red
-}
-
-func rightLeftCase(grandparent *redBlackNode) {
-	parent := grandparent.rightNode
-	rotateRight(parent)
-	rotateLeft(grandparent)
-	//swap colours of parent and grandparent
-	parent.colour = black
-	grandparent.colour = red
-}
-
-func rotateLeft(grandparent *redBlackNode) {
-	//change structure of nodes
-	parent := grandparent.rightNode
-	changeStructureOfNodes(grandparent)
 	grandparent.rightNode = parent.leftNode
 	if parent.leftNode != nil {
 		parent.leftNode.parent = grandparent
@@ -130,10 +158,23 @@ func rotateLeft(grandparent *redBlackNode) {
 	grandparent.parent = parent
 }
 
-func rotateRight(grandparent *redBlackNode) {
-	//change structure of nodes
+func (rbtree *RedBlackTree) rotateRight(grandparent *redBlackNode) {
 	parent := grandparent.leftNode
-	changeStructureOfNodes(grandparent)
+	grandgrandparent := grandparent.parent
+	if grandgrandparent == nil {
+		rbtree.head = parent
+		rbtree.head.parent = nil
+	} else {
+		if grandgrandparent.leftNode == grandparent {
+			grandgrandparent.leftNode = parent
+			parent.parent = grandgrandparent
+		} else if grandgrandparent.rightNode == grandparent {
+			grandgrandparent.rightNode = parent
+			parent.parent = grandgrandparent
+		} else {
+			panic("Impossible situation")
+		}
+	}
 	grandparent.leftNode = parent.rightNode
 	if parent.rightNode != nil {
 		parent.rightNode.parent = grandparent
@@ -142,34 +183,20 @@ func rotateRight(grandparent *redBlackNode) {
 	grandparent.parent = parent
 }
 
-func changeStructureOfNodes(grandparent *redBlackNode) {
-	grandgrandparent := grandparent.parent
-	parent := grandparent.leftNode
-	if grandgrandparent.leftNode == grandparent {
-		grandgrandparent.leftNode = parent
-		parent.parent = grandgrandparent
-	} else if grandgrandparent.rightNode == grandparent {
-		grandgrandparent.rightNode = parent
-		parent.parent = grandgrandparent
-	} else {
-		panic("Impossible situation")
-	}
-}
-
 //Delete func
-func (rbtree *RedBlackTree) Delete(value int) {
+func (rbtree *RedBlackTree) Delete(value int64) {
 
 }
 
 //Find func
-func (rbtree *RedBlackTree) Find(value int) bool {
+func (rbtree *RedBlackTree) Find(value int64) bool {
 	if rbtree.head == nil {
 		return false
 	}
 	return rbtree.head.find(value)
 }
 
-func (rbnode *redBlackNode) find(value int) bool {
+func (rbnode *redBlackNode) find(value int64) bool {
 	if rbnode.value == value {
 		return true
 	}
