@@ -133,54 +133,52 @@ func (rbtree *RedBlackTree) rightLeftCase(grandparent *redBlackNode) {
 	grandparent.colour = red
 }
 
-func (rbtree *RedBlackTree) rotateLeft(grandparent *redBlackNode) {
-	parent := grandparent.rightNode
-	grandgrandparent := grandparent.parent
-	if grandgrandparent == nil {
-		rbtree.head = parent
+func (rbtree *RedBlackTree) rotateLeft(pointOfRotating *redBlackNode) {
+	rightChild := pointOfRotating.rightNode
+	parent := pointOfRotating.parent
+	if parent == nil {
+		rbtree.head = rightChild
 		rbtree.head.parent = nil
 	} else {
-		if grandgrandparent.leftNode == grandparent {
-			grandgrandparent.leftNode = parent
-			parent.parent = grandgrandparent
-		} else if grandgrandparent.rightNode == grandparent {
-			grandgrandparent.rightNode = parent
-			parent.parent = grandgrandparent
+		rightChild.parent = parent
+		if parent.leftNode == pointOfRotating {
+			parent.leftNode = rightChild
+		} else if parent.rightNode == pointOfRotating {
+			parent.rightNode = rightChild
 		} else {
 			panic("Impossible situation")
 		}
 	}
-	grandparent.rightNode = parent.leftNode
-	if parent.leftNode != nil {
-		parent.leftNode.parent = grandparent
+	pointOfRotating.rightNode = rightChild.leftNode
+	if rightChild.leftNode != nil {
+		rightChild.leftNode.parent = pointOfRotating
 	}
-	parent.leftNode = grandparent
-	grandparent.parent = parent
+	rightChild.leftNode = pointOfRotating
+	pointOfRotating.parent = rightChild
 }
 
-func (rbtree *RedBlackTree) rotateRight(grandparent *redBlackNode) {
-	parent := grandparent.leftNode
-	grandgrandparent := grandparent.parent
-	if grandgrandparent == nil {
-		rbtree.head = parent
+func (rbtree *RedBlackTree) rotateRight(pointOfRotating *redBlackNode) {
+	leftChild := pointOfRotating.leftNode
+	parent := pointOfRotating.parent
+	if parent == nil {
+		rbtree.head = leftChild
 		rbtree.head.parent = nil
 	} else {
-		if grandgrandparent.leftNode == grandparent {
-			grandgrandparent.leftNode = parent
-			parent.parent = grandgrandparent
-		} else if grandgrandparent.rightNode == grandparent {
-			grandgrandparent.rightNode = parent
-			parent.parent = grandgrandparent
+		leftChild.parent = parent
+		if parent.leftNode == pointOfRotating {
+			parent.leftNode = leftChild
+		} else if parent.rightNode == pointOfRotating {
+			parent.rightNode = leftChild
 		} else {
 			panic("Impossible situation")
 		}
 	}
-	grandparent.leftNode = parent.rightNode
-	if parent.rightNode != nil {
-		parent.rightNode.parent = grandparent
+	pointOfRotating.leftNode = leftChild.rightNode
+	if leftChild.rightNode != nil {
+		leftChild.rightNode.parent = pointOfRotating
 	}
-	parent.rightNode = grandparent
-	grandparent.parent = parent
+	leftChild.rightNode = pointOfRotating
+	pointOfRotating.parent = leftChild
 }
 
 //Delete func
@@ -197,15 +195,16 @@ func (rbtree *RedBlackTree) Find(value int64) bool {
 }
 
 func (rbnode *redBlackNode) find(value int64) bool {
+	if rbnode == nil {
+		return false
+	}
 	if rbnode.value == value {
 		return true
 	}
-	if rbnode.leftNode != nil {
+	if rbnode.value > value {
 		return rbnode.leftNode.find(value)
-	} else if rbnode.rightNode != nil {
-		return rbnode.rightNode.find(value)
 	} else {
-		return false
+		return rbnode.rightNode.find(value)
 	}
 }
 
