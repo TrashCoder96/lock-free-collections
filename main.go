@@ -9,11 +9,11 @@ func main() {
 	tree := initRedBlackTree()
 	hashmap := make(map[int64]bool, 50000)
 	for i := 0; i < 50000; i++ {
-		hashmap[rand.Int63n(10000000)] = true
+		hashmap[rand.Int63n(9000000000000000000)] = true
 	}
 	for key, value := range hashmap {
 		if value {
-			tree.Add(key)
+			tree.Add(key) //festinating
 		}
 	}
 	for key, value := range hashmap {

@@ -182,8 +182,67 @@ func (rbtree *RedBlackTree) rotateRight(pointOfRotating *redBlackNode) {
 }
 
 //Delete func
-func (rbtree *RedBlackTree) Delete(value int64) {
+func (rbtree *RedBlackTree) Delete(value int64) bool {
+	if rbtree.head == nil {
+		return false
+	}
+	foundNode := rbtree.head.find(value)
+	if foundNode == nil {
+		return false
+	}
+	rbtree.delete(foundNode)
+	return true
+}
 
+func (rbtree *RedBlackTree) delete(rbnode *redBlackNode) {
+	if rbnode.leftNode == nil && rbnode.rightNode == nil {
+		if rbnode.parent != nil {
+			if rbnode.parent.leftNode == rbnode {
+				rbnode.parent.leftNode = nil
+			} else if rbnode.parent.rightNode == nil {
+				rbnode.parent.rightNode = nil
+			} else {
+				panic("Impossible situation")
+			}
+		} else {
+			rbtree.head = nil
+		}
+	} else if rbnode.leftNode != nil && rbnode.rightNode == nil {
+		if rbnode.parent != nil {
+			if rbnode.parent.leftNode == rbnode {
+				rbnode.parent.leftNode = rbnode.leftNode
+			} else if rbnode.parent.rightNode == rbnode {
+				rbnode.parent.rightNode = rbnode.leftNode
+			} else {
+				panic("Impossible situation")
+			}
+			rbnode.leftNode.parent = rbnode.parent
+		} else {
+			rbtree.head = rbnode.leftNode
+			rbnode.leftNode.parent = nil
+		}
+	} else if rbnode.leftNode == nil && rbnode.rightNode != nil {
+		if rbnode.parent != nil {
+			if rbnode.parent.leftNode == rbnode {
+				rbnode.parent.leftNode = rbnode.rightNode
+			} else if rbnode.parent.rightNode == rbnode {
+				rbnode.parent.rightNode = rbnode.rightNode
+			} else {
+				panic("Impossible situation")
+			}
+			rbnode.rightNode.parent = rbnode.parent
+		} else {
+			rbtree.head = rbnode.rightNode
+			rbnode.rightNode.parent = nil
+		}
+	} else {
+		leafNode := rbnode.leftNode
+		for leafNode.leftNode != nil {
+			leafNode = leafNode.leftNode
+		}
+		rbnode.value = leafNode.value
+		rbtree.delete(leafNode)
+	}
 }
 
 //Find func
@@ -191,21 +250,20 @@ func (rbtree *RedBlackTree) Find(value int64) bool {
 	if rbtree.head == nil {
 		return false
 	}
-	return rbtree.head.find(value)
+	return rbtree.head.find(value) != nil
 }
 
-func (rbnode *redBlackNode) find(value int64) bool {
+func (rbnode *redBlackNode) find(value int64) *redBlackNode {
 	if rbnode == nil {
-		return false
+		return nil
 	}
 	if rbnode.value == value {
-		return true
+		return rbnode
 	}
 	if rbnode.value > value {
 		return rbnode.leftNode.find(value)
-	} else {
-		return rbnode.rightNode.find(value)
 	}
+	return rbnode.rightNode.find(value)
 }
 
 func (rbnode *redBlackNode) getGrandparent() *redBlackNode {
