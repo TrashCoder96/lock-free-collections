@@ -7,9 +7,10 @@ import (
 
 func main() {
 	tree := initRedBlackTree()
-	hashmap := make(map[int64]bool, 50000)
-	for i := 0; i < 50000; i++ {
-		hashmap[rand.Int63n(9000000000000000000)] = true
+	hashmap := make(map[int64]bool, 500000)
+	for i := 0; i < 500000; i++ {
+		u := rand.Int63n(9000000000000000000)
+		hashmap[u] = true
 	}
 	for key, value := range hashmap {
 		if value {
@@ -24,5 +25,12 @@ func main() {
 			}
 		}
 	}
-	log.Println()
+	for key, value := range hashmap {
+		if value {
+			b := tree.Delete(key)
+			if !b {
+				log.Println(key)
+			}
+		}
+	}
 }
