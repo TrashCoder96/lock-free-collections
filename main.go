@@ -6,29 +6,31 @@ import (
 )
 
 func main() {
-	tree := initTree(3)
-	hmap := make(map[int64]bool)
-	for i := 0; i < 55000; i++ {
-		hmap[rand.Int63n(10000000)] = true
+	tree := initRedBlackTree()
+	hashmap := make(map[int64]bool, 500000)
+	for i := 0; i < 500000; i++ {
+		u := rand.Int63n(9000000000000000000)
+		hashmap[u] = true
 	}
-	log.Println(len(hmap))
-	for key, value := range hmap {
+	for key, value := range hashmap {
 		if value {
-			if err := tree.Insert(key, ""); err != nil {
-				log.Println(err)
-			}
-			if err := tree.Insert(key, ""); err != nil {
-				log.Println(err)
+			tree.Add(key) //festinating
+		}
+	}
+	for key, value := range hashmap {
+		if value {
+			b := tree.Find(key)
+			if !b {
+				log.Println(key)
 			}
 		}
 	}
-	for key, value := range hmap {
+	for key, value := range hashmap {
 		if value {
-			suc := tree.Delete(key)
-			if !suc {
-				log.Println("delete error")
+			b := tree.Delete(key)
+			if !b {
+				log.Println(key)
 			}
 		}
 	}
-	log.Println()
 }
